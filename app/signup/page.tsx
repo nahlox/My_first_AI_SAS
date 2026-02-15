@@ -1,14 +1,18 @@
 'use client'
 
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase/client'
 
 export default function SignupPage() {
   const router = useRouter()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -30,7 +34,7 @@ export default function SignupPage() {
 
       if (signUpError) {
         setError(signUpError.message)
-        console.error('Signup error:', signUpError)
+        console.error('Signup error:', signUpError.message)
       } else if (data.session) {
         console.log('Signup successful, redirecting to dashboard...')
 
@@ -40,7 +44,9 @@ export default function SignupPage() {
         })
 
         router.push('/dashboard')
-        router.refresh()
+      } else if (data.user) {
+        console.log('User created, but email confirmation may be required')
+        router.push('/dashboard')
       } else {
         setError('Please check your email to verify your account')
       }

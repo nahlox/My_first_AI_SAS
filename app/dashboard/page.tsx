@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Plus, History, LogOut, Coins, Clock } from 'lucide-react';
-import { supabase } from '@/lib/supabase/client';
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
 import { Credits, Research } from '@/lib/types/database';
 import {
   DropdownMenu,
@@ -18,6 +18,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [credits, setCredits] = useState<Credits | null>(null);
@@ -38,7 +42,7 @@ export default function DashboardPage() {
     };
 
     checkUser();
-  }, [router]);
+  }, [router, supabase]);
 
   const fetchCredits = async (userId: string) => {
     const { data, error } = await supabase

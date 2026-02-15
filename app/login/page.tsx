@@ -1,14 +1,18 @@
 'use client'
 
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -20,18 +24,17 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
       if (signInError) {
         setError(signInError.message)
-        console.error('Login error:', signInError)
-      } else if (data.session) {
+        console.error('Login error:', signInError.message)
+      } else {
         console.log('Login successful, redirecting to dashboard...')
         router.push('/dashboard')
-        router.refresh()
       }
     } catch (err) {
       setError('An unexpected error occurred')
