@@ -24,93 +24,20 @@ export default function DashboardPage() {
   const [recentResearch, setRecentResearch] = useState<Research[]>([]);
 
   useEffect(() => {
-    console.log('🎯 Dashboard component mounted/updated');
-    let mounted = true;
-    let authChecked = false;
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    const initAuth = async () => {
-      try {
-        console.log('🔍 Dashboard - Checking session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        console.log('📊 Dashboard - Session check result:', {
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          userId: session?.user?.id,
-          error: error?.message
-        });
-
-        if (!mounted) {
-          console.log('⚠️ Component unmounted, aborting');
-          return;
-        }
-
-        if (error || !session) {
-          if (!authChecked) {
-            authChecked = true;
-            console.log('⏳ No session found, retrying in 100ms...');
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            const { data: { session: retrySession } } = await supabase.auth.getSession();
-
-            if (!mounted) return;
-
-            if (!retrySession) {
-              console.log('❌ No valid session after retry, redirecting to /login');
-              router.push('/login');
-              return;
-            }
-
-            console.log('✅ Session found on retry!');
-            setUser(retrySession.user);
-            await fetchCredits(retrySession.user.id);
-            await fetchRecentResearch(retrySession.user.id);
-          } else {
-            console.log('❌ No session, redirecting to /login');
-            router.push('/login');
-            return;
-          }
-        } else {
-          console.log('✅ Session found immediately, loading dashboard data');
-          setUser(session.user);
-          await fetchCredits(session.user.id);
-          await fetchRecentResearch(session.user.id);
-        }
-
-        if (mounted) {
-          console.log('✨ Dashboard fully loaded');
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('💥 Dashboard init error:', err);
-        if (mounted) {
-          router.push('/login');
-        }
-      }
-    };
-
-    initAuth();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔐 Auth state changed:', event, 'Has session:', !!session);
-
-      if (event === 'SIGNED_IN' && session && mounted) {
-        console.log('👤 User signed in, updating dashboard');
-        setUser(session.user);
-        fetchCredits(session.user.id);
-        fetchRecentResearch(session.user.id);
-        setLoading(false);
-      } else if (event === 'SIGNED_OUT' && mounted) {
-        console.log('👋 User signed out, redirecting to login');
+      if (!session) {
         router.push('/login');
+      } else {
+        setUser(session.user);
+        await fetchCredits(session.user.id);
+        await fetchRecentResearch(session.user.id);
+        setLoading(false);
       }
-    });
-
-    return () => {
-      console.log('🧹 Dashboard cleanup');
-      mounted = false;
-      authListener?.subscription?.unsubscribe();
     };
+
+    checkUser();
   }, [router]);
 
   const fetchCredits = async (userId: string) => {
